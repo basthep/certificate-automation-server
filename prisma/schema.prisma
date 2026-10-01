@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  automations Automation[]
+}
+
+model Automation {
+  id          String  @id @default(cuid())
+  name        String
+  type        String
+  description String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  templates Template[]
+  dataFiles DataFile[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Template {
+  id      String @id @default(cuid())
+  name    String
+  fileUrl String
+  width   Int?
+  height  Int?
+
+  automationId String
+  automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+
+  fields       TemplateField[]
+  certificates Certificate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TemplateField {
+  id         String @id @default(cuid())
+  fieldName  String
+  x          Float
+  y          Float
+  fontSize   Int    @default(20)
+  fontFamily String @default("Arial")
+  color      String @default("#000000")
+  alignment  String @default("center")
+
+  templateId String
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  mappings FieldMapping[]
+
+  createdAt DateTime @default(now())
+}
+
+model FieldMapping {
+  id              String @id @default(cuid())
+  templateFieldId String
+  columnName      String
+
+  templateField TemplateField @relation(fields: [templateFieldId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([templateFieldId])
+}
+
+model Certificate {
+  id              String    @id @default(cuid())
+  participantName String
+  email           String
+  filePath        String
+  format          String
+  status          String    @default("PENDING")
+  errorMessage    String?
+  sentAt          DateTime?
+
+  templateId String
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DataFile {
+  id        String  @id @default(cuid())
+  name      String
+  fileUrl   String
+  sheetName String?
+  rowCount  Int     @default(0)
+  columns   Json
+
+  automationId String
+  automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
